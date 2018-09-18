@@ -1,6 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# testing by 09-18-2018
+# 2D ising model 
+
+
 shape = (150, 150)
 
 # Spin configuration
