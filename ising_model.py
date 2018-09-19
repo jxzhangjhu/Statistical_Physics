@@ -2,10 +2,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # testing by 09-18-2018
-# 2D ising model 
+# 2D ising model
 
 
-shape = (150, 150)
+shape = (16, 16)
 
 # Spin configuration
 spins = np.random.choice([-1, 1], size=shape)
@@ -17,7 +17,7 @@ moment = 1
 field = np.full(shape, 0)
 
 # Temperature (in units of energy)
-temperature = .1
+temperature = 1.4
 
 # Interaction (ferromagnetic if positive, antiferromagnetic if negative)
 interaction = 1
