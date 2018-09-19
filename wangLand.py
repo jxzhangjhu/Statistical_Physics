@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 """
   Wang-Landau algorithm for 2D Ising model
-  K. Haule, Feb.28, 2010
+  Jiaxin Zhang， 09-19-2018
 """
 from scipy import *
-#from scipy import weave
-import scipy.weave as weave
-#import weave
-import sys
 from pylab import *
 
-Nitt=10000000   # Total number of Monte Carlo steps
+Nitt=1000000   # Total number of Monte Carlo steps
 N=10            # Linear size of 2D Ising model, lattice = N x N
 flatness = 0.9  # The condition to reset the Histogarm when
                 # min(Histogram) > average(Histogram)*flattness
@@ -71,7 +67,8 @@ def SamplePython(Nitt, N, N2, indE, E0, flatness):
     
     for itt in range(Nitt):
         ii = int(rand()*N2)       # The site to flip
-        (i,j) = (ii % N, ii / N)  # The coordinates of the site
+        (i,j) = (ii % N, ii % N)  # The coordinates of the site
+        #print(i, j)
         S = latt[i,j]             # its spin
         WF = latt[(i+1)%N, j] + latt[i,(j+1)%N] + latt[(i-1)%N,j] + latt[i,(j-1)%N]
         Enew = Ene + 2*S*WF       # The energy of the tryed step
@@ -91,63 +88,6 @@ def SamplePython(Nitt, N, N2, indE, E0, flatness):
                 print(itt, 'histogram is flatt', mH, aH, 'f=', exp(lnf))
     return lngE, Hist
 
-
-def SampleCPP(Nitt, N, N2, indE, E0, flatness):
-    "The same Wang-Landau algorithm in C++"
-    # Ising lattice at infinite temperature
-    latt = RandomL(N)
-    # Corresponding energy
-    Ene = CEnergy(latt)
-    # Logarithm of the density of states log(g(E))
-    lngE = zeros(len(Energies), dtype=float)
-    # Histogram
-    Hist = zeros(len(Energies), dtype=float)  
-    
-    # modification factor which modifies g(E)
-    # according to the formula g(E) -> g(E)*f,
-    # or equivalently, lngE[i] -> lngE[i] + lnf
-    lnf = 1.0
-
-    code="""
-    using namespace std;
-    for (int itt=0; itt<Nitt; itt++){
-        int ii = int(drand48()*N2);       // The site to flip
-        int i = ii % N;  // The coordinates of the site
-        int j = ii / N;  // The coordinates of the site
-        int S = latt(i,j);                // its spin
-        int WF = latt((i+1)%N, j) + latt(i,(j+1)%N) + latt((i-1+N)%N,j) + latt(i,(j-1+N)%N);
-        int Enew = Ene + 2*S*WF;       // The energy of the tryed step
-        double P = exp(lngE(indE(Ene+E0))-lngE(indE(Enew+E0)));  // Probability to accept according to Wang-Landau
-        if (P > drand48()){            // Metropolis condition
-            latt(i,j) = -S;            // step is accepted, update lattice
-            Ene = Enew;                //    and energy
-        }
-        
-        Hist(indE(Ene+E0)) += 1.;  // Histogram is update at each Monte Carlo step!
-        lngE(indE(Ene+E0)) += lnf; // Density of states is also modified at each step!
-        if (itt % 100 == 0){
-            double aH=0;     // mean Histogram
-            double mH=1e100; // minimum of the Histogram
-            for (int l=0; l<Hist.size(); l++){
-               aH += Hist(l);
-               if (Hist(l)<mH) mH = Hist(l);
-            }
-            aH *= 1./N2;
-
-            if (mH > aH*flatness){    // Is the histogram flat enough?
-                Hist = 0.0;           // Resetting histogram
-                lnf /= 2.;            //   and reducing the modification factor
-                cout<<itt<<" histogram is flatt "<<mH<<" "<<aH<<" f="<<exp(lnf)<<endl;
-            }
-        }
-    }
-    """
-    weave.inline(code, ['Nitt', 'N', 'N2', 'indE', 'E0', 'flatness', 'latt', 'Ene', 'lngE', 'Hist', 'lnf'],
-                 type_converters=weave.converters.blitz, compiler = 'gcc')
-    
-    return (lngE, Hist)
-
-
 if __name__ == '__main__':
 
     # Possible energies of the Ising model
@@ -161,8 +101,8 @@ if __name__ == '__main__':
     indE = -ones(E0*2+1, dtype=int)           
     for i,E in enumerate(Energies): indE[E+E0]=i
     
-    (lngE, Hist) = SampleCPP(Nitt, N, N2, indE, E0, flatness)
-
+    # (lngE, Hist) = SampleCPP(Nitt, N, N2, indE, E0, flatness)
+    (lngE, Hist) = SamplePython(Nitt, N, N2, indE, E0, flatness)
     
     # Normalize the density of states, knowing that the lowest energy state is double degenerate
     # lgC = log( (exp(lngE[0])+exp(lngE[-1]))/4. )
