@@ -4,7 +4,7 @@ Monte Carlo simulation of the 2D Ising model
 """
 
 from scipy import *
-from scipy import weave
+#from scipy import weave
 from pylab import *
 
 Nitt = 1000000  # total number of Monte Carlo steps
@@ -61,48 +61,6 @@ def SamplePython(Nitt, latt, PW):
 
     return (Maver / Naver, Eaver / Naver)
 
-
-def SampleCPP(Nitt, latt, PW, T):
-    "The same Monte Carlo sampling in C++"
-    Ene = float(CEnergy(latt))  # Starting energy
-    Mn = float(sum(latt))  # Starting magnetization
-
-    # Measurements
-    aver = zeros(5, dtype=float)  # contains: [Naver, Eaver, Maver]
-
-    code = """
-    using namespace std;
-    int N2 = N*N;
-    for (int itt=0; itt<Nitt; itt++){
-        int t = static_cast<int>(drand48()*N2);
-        int i = t % N;
-        int j = t / N;
-        int S = latt(i,j);
-        int WF = latt((i+1)%N, j) + latt(i,(j+1)%N) + latt((i-1+N)%N,j) + latt(i,(j-1+N)%N);
-        double P = PW(4+S*WF);
-        if (P > drand48()){ // flip the spin
-            latt(i,j) = -S;
-            Ene += 2*S*WF;
-            Mn -= 2*S;
-        }
-        if (itt>warm && itt%measure==0){
-            aver(0) += 1;
-            aver(1) += Ene;
-            aver(2) += Mn;
-            aver(3) += Ene*Ene;
-            aver(4) += Mn*Mn;
-        }
-    }
-    """
-    weave.inline(code, ['Nitt', 'latt', 'N', 'PW', 'Ene', 'Mn', 'warm', 'measure', 'aver'],
-                 type_converters=weave.converters.blitz, compiler='gcc')
-    aE = aver[1] / aver[0]
-    aM = aver[2] / aver[0]
-    cv = (aver[3] / aver[0] - (aver[1] / aver[0]) ** 2) / T ** 2
-    chi = (aver[4] / aver[0] - (aver[2] / aver[0]) ** 2) / T
-    return (aM, aE, cv, chi)
-
-
 if __name__ == '__main__':
 
     latt = RandomL(N)
@@ -121,8 +79,8 @@ if __name__ == '__main__':
         PW[4 - 2] = exp(2. * 2 / T)
         PW[4 - 4] = exp(4. * 2 / T)
 
-        # (maver, eaver) = SamplePython(Nitt, latt, PW)
-        (aM, aE, cv, chi) = SampleCPP(Nitt, latt, PW, T)
+        (maver, eaver) = SamplePython(Nitt, latt, PW)
+        #(aM, aE, cv, chi) = SampleCPP(Nitt, latt, PW, T)
         wMag.append(aM / (N * N))
         wEne.append(aE / (N * N))
         wCv.append(cv / (N * N))

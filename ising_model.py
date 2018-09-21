@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # 2D ising model
 
 
-shape = (16, 16)
+shape = (40, 40)
 
 # Spin configuration
 spins = np.random.choice([-1, 1], size=shape)
@@ -17,7 +17,7 @@ moment = 1
 field = np.full(shape, 0)
 
 # Temperature (in units of energy)
-temperature = 1.4
+temperature = 0.1
 
 # Interaction (ferromagnetic if positive, antiferromagnetic if negative)
 interaction = 1
@@ -55,10 +55,21 @@ plt.show()
 
 im = plt.imshow(spins, cmap='gray', vmin=-1, vmax=1, interpolation='none')
 t = 0
-while True:
-    if t % 10 == 0:
+Nitt = 100000
+
+spins = np.random.choice([-1, 1], size=shape)
+Energy = get_energy(spins)
+print(Energy)
+
+#while True:
+for t in range(Nitt):
+    if t % 100 == 0:
         im.set_data(spins)
         plt.draw()
     spins = update(spins, temperature)
+    #print(spins)
+    Energy = get_energy(spins)
+    print(Energy)
     plt.pause(.001)
     t += 1
+    plt.show()
